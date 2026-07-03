@@ -5,11 +5,12 @@ import { WritingStats } from "../stats.ts";
 import {
   calculateFocusRate,
   calculateSpeedPerHour,
+  countTextUnits,
   formatDuration,
 } from "../utils.ts";
 
 test("counts only positive non-whitespace input deltas", () => {
-  const stats = new WritingStats({ idleThresholdSeconds: 5 });
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
 
   stats.handleContentChange("", "你好 world", 0);
   assert.equal(stats.getState().wordCount, 7);
@@ -21,8 +22,57 @@ test("counts only positive non-whitespace input deltas", () => {
   assert.equal(stats.getState().wordCount, 12);
 });
 
+test("treats deletion as writing activity without reducing word count", () => {
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
+
+  stats.handleContentChange("hello", "hell", 0);
+  stats.tick(3000);
+
+  assert.equal(stats.getState().wordCount, 0);
+  assert.equal(stats.getState().writingTimeMs, 3000);
+  assert.equal(stats.getState().idleTimeMs, 0);
+});
+
+test("deletion resumes writing time after an idle period", () => {
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
+
+  stats.handleContentChange("", "hello", 0);
+  stats.tick(7000);
+  assert.equal(stats.getState().writingTimeMs, 5000);
+  assert.equal(stats.getState().idleTimeMs, 2000);
+
+  stats.handleContentChange("hello", "hell", 7000);
+  stats.tick(9000);
+
+  assert.equal(stats.getState().wordCount, 5);
+  assert.equal(stats.getState().writingTimeMs, 7000);
+  assert.equal(stats.getState().idleTimeMs, 2000);
+});
+
+test("counts text with selectable count modes", () => {
+  assert.equal(countTextUnits("你好 world test", "characters"), 11);
+  assert.equal(countTextUnits("你好 world test", "chinese-characters"), 2);
+  assert.equal(countTextUnits("你好 world test don't", "english-words"), 3);
+});
+
+test("uses selected count mode for input deltas", () => {
+  const chineseStats = new WritingStats({
+    idleThresholdSeconds: 5,
+    countMode: "chinese-characters",
+  });
+  chineseStats.handleContentChange("", "你好 world", 0);
+  assert.equal(chineseStats.getState().wordCount, 2);
+
+  const englishStats = new WritingStats({
+    idleThresholdSeconds: 5,
+    countMode: "english-words",
+  });
+  englishStats.handleContentChange("", "你好 world again", 0);
+  assert.equal(englishStats.getState().wordCount, 2);
+});
+
 test("moves elapsed time from active to idle after the configured threshold", () => {
-  const stats = new WritingStats({ idleThresholdSeconds: 5 });
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
 
   stats.handleContentChange("", "a", 0);
   stats.tick(3000);
@@ -35,7 +85,7 @@ test("moves elapsed time from active to idle after the configured threshold", ()
 });
 
 test("pause freezes words and elapsed time until resumed", () => {
-  const stats = new WritingStats({ idleThresholdSeconds: 5 });
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
 
   stats.handleContentChange("", "abc", 0);
   stats.tick(2000);
@@ -53,7 +103,7 @@ test("pause freezes words and elapsed time until resumed", () => {
 });
 
 test("reset clears counters and timing anchors", () => {
-  const stats = new WritingStats({ idleThresholdSeconds: 5 });
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
 
   stats.handleContentChange("", "abc", 0);
   stats.tick(7000);

@@ -1,0 +1,26 @@
+{
+  "name": "count-words-and-time-obsidian-plugin",
+  "version": "0.1.0",
+  "description": "Obsidian plugin for tracking writing words, time, speed, and focus rate.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "writing",
+    "stats"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "builtin-modules": "^4.0.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "^1.7.2",
+    "typescript": "^5.8.0"
+  }
+}
