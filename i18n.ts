@@ -1,0 +1,111 @@
+export type InterfaceLanguage = "system" | "zh" | "en";
+export type Locale = "zh" | "en";
+
+const translations = {
+  zh: {
+    "actions.continue": "继续",
+    "actions.pause": "暂停",
+    "actions.reset": "开始新的统计",
+    "commands.openView": "打开写作统计侧边栏",
+    "commands.resetStats": "开始新的统计",
+    "commands.togglePause": "暂停或继续写作统计",
+    "countMode.characters": "字符数（忽略空白）",
+    "countMode.chineseCharacters": "中文字符数",
+    "countMode.englishWords": "英文单词数",
+    "language.english": "English",
+    "language.system": "跟随 Obsidian",
+    "language.zh": "中文",
+    "notice.continued": "写作统计已继续",
+    "notice.paused": "写作统计已暂停",
+    "notice.reset": "已开始新的统计",
+    "settings.autoOpen.desc": "插件启动后自动显示写作统计视图。",
+    "settings.autoOpen.name": "自动打开统计侧边栏",
+    "settings.autoStart.desc": "关闭后，插件启动时保持暂停，点击继续后开始统计。",
+    "settings.autoStart.name": "插件启动时自动开始统计",
+    "settings.countMode.desc": "选择本次输入增量的统计口径。",
+    "settings.countMode.name": "统计单位",
+    "settings.idleThreshold.desc": "最后一次输入后超过该间隔，开始累计空闲时间。",
+    "settings.idleThreshold.name": "空闲触发间隔",
+    "settings.ignoreSeconds.desc": "开启后，所有时间显示为 hh:mm。",
+    "settings.ignoreSeconds.name": "忽略秒钟",
+    "settings.language.desc": "选择插件界面显示语言。",
+    "settings.language.name": "界面语言",
+    "settings.speedMode.desc": "总计速度按总计时间计算，码字速度只按码字时间计算。",
+    "settings.speedMode.name": "平均速度计算方式",
+    "settings.title": "写作统计设置",
+    "speedMode.total": "总计速度",
+    "speedMode.writing": "码字速度",
+    "time.seconds": "秒",
+    "units.character": "字",
+    "units.chineseCharacter": "中文字符",
+    "units.englishWord": "词",
+    "view.averageSpeed": "平均速度",
+    "view.focusRate": "专注率",
+    "view.idleTime": "空闲时间",
+    "view.title": "本次写作",
+    "view.totalTime": "总计时间",
+    "view.writingStats": "写作统计",
+    "view.writingTime": "码字时间",
+    "view.wordCount": "字数",
+  },
+  en: {
+    "actions.continue": "Resume",
+    "actions.pause": "Pause",
+    "actions.reset": "Start new session",
+    "commands.openView": "Open writing stats sidebar",
+    "commands.resetStats": "Start new session",
+    "commands.togglePause": "Pause or resume writing stats",
+    "countMode.characters": "Characters, ignoring whitespace",
+    "countMode.chineseCharacters": "Chinese characters",
+    "countMode.englishWords": "English words",
+    "language.english": "English",
+    "language.system": "Follow Obsidian",
+    "language.zh": "中文",
+    "notice.continued": "Writing stats resumed",
+    "notice.paused": "Writing stats paused",
+    "notice.reset": "Started a new session",
+    "settings.autoOpen.desc": "Automatically show the writing stats view when the plugin starts.",
+    "settings.autoOpen.name": "Auto-open stats sidebar",
+    "settings.autoStart.desc": "When disabled, the plugin starts paused until you resume tracking.",
+    "settings.autoStart.name": "Auto-start tracking on plugin load",
+    "settings.countMode.desc": "Choose how input deltas are counted.",
+    "settings.countMode.name": "Count unit",
+    "settings.idleThreshold.desc": "Start counting idle time after this many seconds without input.",
+    "settings.idleThreshold.name": "Idle threshold",
+    "settings.ignoreSeconds.desc": "When enabled, all times display as hh:mm.",
+    "settings.ignoreSeconds.name": "Hide seconds",
+    "settings.language.desc": "Choose the plugin interface language.",
+    "settings.language.name": "Interface language",
+    "settings.speedMode.desc": "Total speed uses total time; writing speed uses writing time only.",
+    "settings.speedMode.name": "Average speed mode",
+    "settings.title": "Writing stats settings",
+    "speedMode.total": "Total speed",
+    "speedMode.writing": "Writing speed",
+    "time.seconds": "sec",
+    "units.character": "chars",
+    "units.chineseCharacter": "Chinese chars",
+    "units.englishWord": "words",
+    "view.averageSpeed": "Average speed",
+    "view.focusRate": "Focus rate",
+    "view.idleTime": "Idle time",
+    "view.title": "Current session",
+    "view.totalTime": "Total time",
+    "view.writingStats": "Writing stats",
+    "view.writingTime": "Writing time",
+    "view.wordCount": "Count",
+  },
+} as const;
+
+export type TranslationKey = keyof typeof translations.en;
+
+export function resolveLocale(language: InterfaceLanguage, obsidianLocale?: string): Locale {
+  if (language === "zh" || language === "en") {
+    return language;
+  }
+
+  return obsidianLocale?.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+
+export function createTranslator(locale: Locale): (key: TranslationKey) => string {
+  return (key) => translations[locale][key] ?? translations.en[key] ?? key;
+}

@@ -62,27 +62,3 @@ export function getAverageSpeed(
   const baseTimeMs = mode === "writing" ? writingTimeMs : totalTimeMs;
   return calculateSpeedPerHour(wordCount, baseTimeMs);
 }
-
-export function getCountModeMetricLabel(mode: CountMode): string {
-  if (mode === "chinese-characters") {
-    return "中文字符";
-  }
-
-  if (mode === "english-words") {
-    return "英文单词";
-  }
-
-  return "字数";
-}
-
-export function getCountModeUnit(mode: CountMode): string {
-  if (mode === "chinese-characters") {
-    return "中文字符";
-  }
-
-  if (mode === "english-words") {
-    return "词";
-  }
-
-  return "字";
-}

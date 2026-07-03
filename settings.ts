@@ -1,8 +1,10 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
+import type { InterfaceLanguage } from "./i18n.ts";
 import type WritingStatsPlugin from "./main.ts";
 import type { CountMode, SpeedMode } from "./utils.ts";
 
 export interface WritingStatsSettings {
+  interfaceLanguage: InterfaceLanguage;
   idleThresholdSeconds: number;
   speedMode: SpeedMode;
   countMode: CountMode;
@@ -12,6 +14,7 @@ export interface WritingStatsSettings {
 }
 
 export const DEFAULT_SETTINGS: WritingStatsSettings = {
+  interfaceLanguage: "system",
   idleThresholdSeconds: 5,
   speedMode: "total",
   countMode: "characters",
@@ -35,17 +38,34 @@ export class WritingStatsSettingTab extends PluginSettingTab {
 
   display(): void {
     const { containerEl } = this;
+    const t = this.plugin.t;
     containerEl.replaceChildren();
 
-    const heading = containerEl.createEl("h2", { text: "写作统计设置" });
+    const heading = containerEl.createEl("h2", { text: t("settings.title") });
     heading.addClass("writing-stats-settings-heading");
 
     new Setting(containerEl)
-      .setName("空闲触发间隔")
-      .setDesc("最后一次输入后超过该间隔，开始累计空闲时间。")
+      .setName(t("settings.language.name"))
+      .setDesc(t("settings.language.desc"))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("system", t("language.system"))
+          .addOption("zh", t("language.zh"))
+          .addOption("en", t("language.english"))
+          .setValue(this.plugin.settings.interfaceLanguage)
+          .onChange(async (value) => {
+            this.plugin.settings.interfaceLanguage = this.toInterfaceLanguage(value);
+            await this.plugin.saveSettings();
+            this.display();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("settings.idleThreshold.name"))
+      .setDesc(t("settings.idleThreshold.desc"))
       .addDropdown((dropdown) => {
         for (const seconds of IDLE_THRESHOLD_OPTIONS) {
-          dropdown.addOption(String(seconds), `${seconds} 秒`);
+          dropdown.addOption(String(seconds), `${seconds} ${t("time.seconds")}`);
         }
 
         dropdown
@@ -57,12 +77,12 @@ export class WritingStatsSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("平均速度计算方式")
-      .setDesc("总计速度按总计时间计算，码字速度只按码字时间计算。")
+      .setName(t("settings.speedMode.name"))
+      .setDesc(t("settings.speedMode.desc"))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("total", "总计速度")
-          .addOption("writing", "码字速度")
+          .addOption("total", t("speedMode.total"))
+          .addOption("writing", t("speedMode.writing"))
           .setValue(this.plugin.settings.speedMode)
           .onChange(async (value) => {
             this.plugin.settings.speedMode = value === "writing" ? "writing" : "total";
@@ -71,13 +91,13 @@ export class WritingStatsSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("统计单位")
-      .setDesc("选择本次输入增量的统计口径。")
+      .setName(t("settings.countMode.name"))
+      .setDesc(t("settings.countMode.desc"))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("characters", "字符数（忽略空白）")
-          .addOption("chinese-characters", "中文字符数")
-          .addOption("english-words", "英文单词数")
+          .addOption("characters", t("countMode.characters"))
+          .addOption("chinese-characters", t("countMode.chineseCharacters"))
+          .addOption("english-words", t("countMode.englishWords"))
           .setValue(this.plugin.settings.countMode)
           .onChange(async (value) => {
             this.plugin.settings.countMode = this.toCountMode(value);
@@ -86,8 +106,8 @@ export class WritingStatsSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("忽略秒钟")
-      .setDesc("开启后，所有时间显示为 hh:mm。")
+      .setName(t("settings.ignoreSeconds.name"))
+      .setDesc(t("settings.ignoreSeconds.desc"))
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.ignoreSeconds).onChange(async (value) => {
           this.plugin.settings.ignoreSeconds = value;
@@ -96,8 +116,8 @@ export class WritingStatsSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("自动打开统计侧边栏")
-      .setDesc("插件启动后自动显示写作统计视图。")
+      .setName(t("settings.autoOpen.name"))
+      .setDesc(t("settings.autoOpen.desc"))
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.autoOpenSidebar).onChange(async (value) => {
           this.plugin.settings.autoOpenSidebar = value;
@@ -106,8 +126,8 @@ export class WritingStatsSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("插件启动时自动开始统计")
-      .setDesc("关闭后，插件启动时保持暂停，点击继续后开始统计。")
+      .setName(t("settings.autoStart.name"))
+      .setDesc(t("settings.autoStart.desc"))
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.autoStartOnLaunch).onChange(async (value) => {
           this.plugin.settings.autoStartOnLaunch = value;
@@ -122,5 +142,13 @@ export class WritingStatsSettingTab extends PluginSettingTab {
     }
 
     return "characters";
+  }
+
+  private toInterfaceLanguage(value: string): InterfaceLanguage {
+    if (value === "zh" || value === "en") {
+      return value;
+    }
+
+    return "system";
   }
 }

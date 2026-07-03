@@ -3,7 +3,7 @@
   "name": "Count Words and Time",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "统计本次写作的字数、码字时间、空闲时间、平均速度和专注率。",
+  "description": "Track writing session count, writing time, idle time, average speed, and focus rate.",
   "author": "dongperry",
   "authorUrl": "",
   "isDesktopOnly": false

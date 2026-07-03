@@ -1,4 +1,6 @@
 import { MarkdownView, Notice, Plugin, WorkspaceLeaf } from "obsidian";
+import { createTranslator, resolveLocale } from "./i18n.ts";
+import type { Locale, TranslationKey } from "./i18n.ts";
 import { DEFAULT_SETTINGS, WritingStatsSettingTab } from "./settings.ts";
 import type { WritingStatsSettings } from "./settings.ts";
 import { WritingStats } from "./stats.ts";
@@ -11,6 +13,8 @@ interface EditorLike {
 
 export default class WritingStatsPlugin extends Plugin {
   settings: WritingStatsSettings = { ...DEFAULT_SETTINGS };
+  locale: Locale = "en";
+  t: (key: TranslationKey) => string = createTranslator("en");
 
   private stats!: WritingStats;
   private timer = new StatsTimer();
@@ -18,6 +22,7 @@ export default class WritingStatsPlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    this.updateTranslator();
 
     this.stats = new WritingStats({
       idleThresholdSeconds: this.settings.idleThresholdSeconds,
@@ -35,6 +40,7 @@ export default class WritingStatsPlugin extends Plugin {
           leaf,
           this.stats,
           () => this.settings,
+          () => this.t,
           {
             onTogglePause: () => this.togglePaused(),
             onReset: () => this.resetStats(),
@@ -42,13 +48,13 @@ export default class WritingStatsPlugin extends Plugin {
         ),
     );
 
-    this.addRibbonIcon("timer", "写作统计", () => {
+    this.addRibbonIcon("timer", this.t("view.writingStats"), () => {
       void this.openStatsView();
     });
 
     this.addCommand({
       id: "open-writing-stats-view",
-      name: "打开写作统计侧边栏",
+      name: this.t("commands.openView"),
       callback: () => {
         void this.openStatsView();
       },
@@ -56,13 +62,13 @@ export default class WritingStatsPlugin extends Plugin {
 
     this.addCommand({
       id: "reset-writing-stats",
-      name: "开始新的统计",
+      name: this.t("commands.resetStats"),
       callback: () => this.resetStats(),
     });
 
     this.addCommand({
       id: "toggle-writing-stats-pause",
-      name: "暂停或继续写作统计",
+      name: this.t("commands.togglePause"),
       callback: () => this.togglePaused(),
     });
 
@@ -109,11 +115,27 @@ export default class WritingStatsPlugin extends Plugin {
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
+    this.updateTranslator();
     this.stats.updateOptions({
       idleThresholdSeconds: this.settings.idleThresholdSeconds,
       countMode: this.settings.countMode,
     });
-    this.refreshViews();
+    this.refreshViews(true);
+  }
+
+  private updateTranslator(): void {
+    this.locale = resolveLocale(this.settings.interfaceLanguage, this.getObsidianLocale());
+    this.t = createTranslator(this.locale);
+  }
+
+  private getObsidianLocale(): string | undefined {
+    const appWithLocale = this.app as typeof this.app & {
+      vault?: {
+        getConfig?: (key: string) => unknown;
+      };
+    };
+    const locale = appWithLocale.vault?.getConfig?.("locale");
+    return typeof locale === "string" ? locale : undefined;
   }
 
   private handleEditorChange(editor: unknown): void {
@@ -165,7 +187,7 @@ export default class WritingStatsPlugin extends Plugin {
 
   private togglePaused(): void {
     const isPaused = this.stats.togglePaused(Date.now());
-    new Notice(isPaused ? "写作统计已暂停" : "写作统计已继续");
+    new Notice(isPaused ? this.t("notice.paused") : this.t("notice.continued"));
     this.captureActiveEditorContent();
     this.refreshViews();
   }
@@ -174,14 +196,14 @@ export default class WritingStatsPlugin extends Plugin {
     this.stats.reset();
     this.captureActiveEditorContent();
     this.refreshViews();
-    new Notice("已开始新的统计");
+    new Notice(this.t("notice.reset"));
   }
 
-  private refreshViews(): void {
+  private refreshViews(forceFullRender = false): void {
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_WRITING_STATS)) {
       const view = leaf.view;
       if (view instanceof WritingStatsView) {
-        view.requestRender();
+        view.requestRender(forceFullRender);
       }
     }
   }

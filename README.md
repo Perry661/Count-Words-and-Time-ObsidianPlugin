@@ -10,6 +10,7 @@ The plugin is designed to work on both Obsidian desktop and mobile. It uses Obsi
 - Supports character count, Chinese character count, and English word count.
 - Deleting text does not reduce the session count.
 - Typing and deleting both count as writing activity for timing.
+- Supports Chinese and English interface languages.
 - Tracks idle time after a configurable inactivity threshold.
 - Shows total time as writing time plus idle time.
 - Calculates average speed per hour based on the selected count unit.
@@ -31,10 +32,14 @@ The writing stats sidebar shows:
 - Pause/Resume button
 - Start new session button
 
-Open it from the ribbon icon or the command palette command `打开写作统计侧边栏`.
+Open it from the ribbon icon or the command palette. The command name follows the selected interface language.
 
 ## Settings
 
+- Interface language:
+  - Follow Obsidian.
+  - Chinese.
+  - English.
 - Idle threshold: `5`, `10`, `20`, `30`, or `60` seconds.
 - Average speed mode:
   - Total speed: word count divided by total time.
