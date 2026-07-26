@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { WritingStats } from "../stats.ts";
 import {
   calculateFocusRate,
-  calculateSpeedPerHour,
+  calculateSpeed,
   countTextUnits,
   formatDuration,
 } from "../utils.ts";
@@ -84,6 +84,37 @@ test("moves elapsed time from active to idle after the configured threshold", ()
   assert.equal(stats.getState().idleTimeMs, 2000);
 });
 
+test("calculates speed data from a recent sliding window", () => {
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
+
+  stats.handleContentChange("", "a".repeat(10), 0);
+  stats.handleContentChange("a".repeat(10), "a".repeat(15), 30_000);
+  stats.handleContentChange("a".repeat(15), "a".repeat(35), 70_000);
+  stats.tick(80_000);
+
+  const speedWindow = stats.getSpeedWindowState(80_000);
+
+  assert.equal(stats.getState().wordCount, 35);
+  assert.equal(speedWindow.wordCount, 25);
+  assert.equal(speedWindow.writingTimeMs, 10_000);
+  assert.equal(speedWindow.idleTimeMs, 50_000);
+  assert.equal(speedWindow.totalTimeMs, 60_000);
+});
+
+test("uses elapsed session time as speed window before the window fills", () => {
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
+
+  stats.handleContentChange("", "a".repeat(10), 10_000);
+  stats.tick(20_000);
+
+  const speedWindow = stats.getSpeedWindowState(20_000);
+
+  assert.equal(speedWindow.wordCount, 10);
+  assert.equal(speedWindow.writingTimeMs, 5000);
+  assert.equal(speedWindow.idleTimeMs, 5000);
+  assert.equal(speedWindow.totalTimeMs, 10_000);
+});
+
 test("pause freezes words and elapsed time until resumed", () => {
   const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
 
@@ -100,6 +131,21 @@ test("pause freezes words and elapsed time until resumed", () => {
   stats.setPaused(false, 10_000);
   stats.handleContentChange("abcdef", "abcdefg", 11_000);
   assert.equal(stats.getState().wordCount, 4);
+});
+
+test("pause freezes speed window sampling time", () => {
+  const stats = new WritingStats({ idleThresholdSeconds: 5, countMode: "characters" });
+
+  stats.handleContentChange("", "a".repeat(10), 0);
+  stats.tick(3000);
+  stats.setPaused(true, 3000);
+
+  assert.deepEqual(stats.getSpeedWindowState(30_000), {
+    wordCount: 10,
+    writingTimeMs: 3000,
+    idleTimeMs: 0,
+    totalTimeMs: 3000,
+  });
 });
 
 test("reset clears counters and timing anchors", () => {
@@ -124,8 +170,9 @@ test("reset clears counters and timing anchors", () => {
 test("formats time, speed, and focus rate", () => {
   assert.equal(formatDuration(3_661_000, false), "01:01:01");
   assert.equal(formatDuration(3_661_000, true), "01:01");
-  assert.equal(calculateSpeedPerHour(120, 30 * 60 * 1000), 240);
-  assert.equal(calculateSpeedPerHour(120, 0), 0);
+  assert.equal(calculateSpeed(120, 30 * 60 * 1000, "hour"), 240);
+  assert.equal(calculateSpeed(120, 30 * 60 * 1000, "minute"), 4);
+  assert.equal(calculateSpeed(120, 0, "hour"), 0);
   assert.equal(calculateFocusRate(4_000, 10_000), 40);
   assert.equal(calculateFocusRate(4_000, 0), 0);
 });

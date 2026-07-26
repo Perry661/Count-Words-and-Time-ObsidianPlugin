@@ -134,20 +134,23 @@ export class WritingStatsView extends ItemView {
   private updateValues(): void {
     const settings = this.getSettings();
     const state = this.stats.getState();
+    const speedWindowState = this.stats.getSpeedWindowState();
     const t = this.getTranslator();
     const focusRate = calculateFocusRate(state.writingTimeMs, state.totalTimeMs);
     const averageSpeed = getAverageSpeed(
-      state.wordCount,
-      state.writingTimeMs,
-      state.totalTimeMs,
+      speedWindowState.wordCount,
+      speedWindowState.writingTimeMs,
+      speedWindowState.totalTimeMs,
       settings.speedMode,
+      settings.speedUnit,
     );
 
     const unit = this.getCountModeUnit(settings.countMode, t);
+    const speedUnit = settings.speedUnit === "minute" ? t("units.perMinute") : t("units.perHour");
 
     this.setText(this.wordCountLabelEl, this.getCountModeMetricLabel(settings.countMode, t));
     this.setText(this.wordCountEl, `${state.wordCount} ${unit}`);
-    this.setText(this.averageSpeedEl, `${averageSpeed} ${unit}/h`);
+    this.setText(this.averageSpeedEl, `${averageSpeed} ${unit}/${speedUnit}`);
     this.setText(this.writingTimeEl, formatDuration(state.writingTimeMs, settings.ignoreSeconds));
     this.setText(this.idleTimeEl, formatDuration(state.idleTimeMs, settings.ignoreSeconds));
     this.setText(this.totalTimeEl, formatDuration(state.totalTimeMs, settings.ignoreSeconds));

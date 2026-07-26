@@ -13,7 +13,8 @@ The plugin is designed to work on both Obsidian desktop and mobile. It uses Obsi
 - Supports Chinese and English interface languages.
 - Tracks idle time after a configurable inactivity threshold.
 - Shows total time as writing time plus idle time.
-- Calculates average speed per hour based on the selected count unit.
+- Calculates average speed from a recent 60-second sliding window.
+- Supports per-hour and per-minute speed display based on the selected count unit.
 - Supports two speed modes: total speed and writing speed.
 - Shows focus rate as a progress bar.
 - Provides pause/resume and start-new-session controls.
@@ -44,6 +45,10 @@ Open it from the ribbon icon or the command palette. The command name follows th
 - Average speed mode:
   - Total speed: word count divided by total time.
   - Writing speed: word count divided by writing time.
+- Speed display unit:
+  - Per hour.
+  - Per minute.
+- Speed sampling window: the latest 60 seconds. Before the first 60 seconds have elapsed, the plugin uses the elapsed session time so far.
 - Count unit:
   - Characters, ignoring whitespace.
   - Chinese characters.

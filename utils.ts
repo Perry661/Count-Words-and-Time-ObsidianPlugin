@@ -1,4 +1,5 @@
 export type SpeedMode = "total" | "writing";
+export type SpeedUnit = "hour" | "minute";
 export type CountMode = "characters" | "chinese-characters" | "english-words";
 
 export function countTextUnits(text: string, mode: CountMode = "characters"): number {
@@ -36,13 +37,14 @@ export function formatDuration(milliseconds: number, ignoreSeconds: boolean): st
   return ignoreSeconds ? `${hh}:${mm}` : `${hh}:${mm}:${ss}`;
 }
 
-export function calculateSpeedPerHour(wordCount: number, milliseconds: number): number {
+export function calculateSpeed(wordCount: number, milliseconds: number, unit: SpeedUnit): number {
   if (wordCount <= 0 || milliseconds <= 0) {
     return 0;
   }
 
-  const hours = milliseconds / 3_600_000;
-  return Math.round(wordCount / hours);
+  const divisor = unit === "minute" ? 60_000 : 3_600_000;
+  const duration = milliseconds / divisor;
+  return Math.round(wordCount / duration);
 }
 
 export function calculateFocusRate(writingTimeMs: number, totalTimeMs: number): number {
@@ -58,7 +60,8 @@ export function getAverageSpeed(
   writingTimeMs: number,
   totalTimeMs: number,
   mode: SpeedMode,
+  unit: SpeedUnit,
 ): number {
   const baseTimeMs = mode === "writing" ? writingTimeMs : totalTimeMs;
-  return calculateSpeedPerHour(wordCount, baseTimeMs);
+  return calculateSpeed(wordCount, baseTimeMs, unit);
 }

@@ -1,12 +1,13 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type { InterfaceLanguage } from "./i18n.ts";
 import type WritingStatsPlugin from "./main.ts";
-import type { CountMode, SpeedMode } from "./utils.ts";
+import type { CountMode, SpeedMode, SpeedUnit } from "./utils.ts";
 
 export interface WritingStatsSettings {
   interfaceLanguage: InterfaceLanguage;
   idleThresholdSeconds: number;
   speedMode: SpeedMode;
+  speedUnit: SpeedUnit;
   countMode: CountMode;
   ignoreSeconds: boolean;
   autoOpenSidebar: boolean;
@@ -17,6 +18,7 @@ export const DEFAULT_SETTINGS: WritingStatsSettings = {
   interfaceLanguage: "system",
   idleThresholdSeconds: 5,
   speedMode: "total",
+  speedUnit: "hour",
   countMode: "characters",
   ignoreSeconds: false,
   autoOpenSidebar: true,
@@ -86,6 +88,20 @@ export class WritingStatsSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.speedMode)
           .onChange(async (value) => {
             this.plugin.settings.speedMode = value === "writing" ? "writing" : "total";
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("settings.speedUnit.name"))
+      .setDesc(t("settings.speedUnit.desc"))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("hour", t("speedUnit.hour"))
+          .addOption("minute", t("speedUnit.minute"))
+          .setValue(this.plugin.settings.speedUnit)
+          .onChange(async (value) => {
+            this.plugin.settings.speedUnit = value === "minute" ? "minute" : "hour";
             await this.plugin.saveSettings();
           }),
       );
