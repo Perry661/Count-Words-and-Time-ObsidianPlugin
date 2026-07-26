@@ -1,4 +1,5 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { PluginSettingTab } from "obsidian";
+import type { App, SettingDefinitionItem } from "obsidian";
 import type { InterfaceLanguage } from "./i18n.ts";
 import type WritingStatsPlugin from "./main.ts";
 import type { CountMode, SpeedMode, SpeedUnit } from "./utils.ts";
@@ -38,133 +39,169 @@ export class WritingStatsSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  display(): void {
-    const { containerEl } = this;
+  getSettingDefinitions(): SettingDefinitionItem<keyof WritingStatsSettings>[] {
     const t = this.plugin.t;
-    containerEl.replaceChildren();
+    const idleThresholdOptions = Object.fromEntries(
+      IDLE_THRESHOLD_OPTIONS.map((seconds) => [
+        String(seconds),
+        `${seconds} ${t("time.seconds")}`,
+      ]),
+    );
 
-    const heading = containerEl.createEl("h2", { text: t("settings.title") });
-    heading.addClass("writing-stats-settings-heading");
-
-    new Setting(containerEl)
-      .setName(t("settings.language.name"))
-      .setDesc(t("settings.language.desc"))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("system", t("language.system"))
-          .addOption("zh", t("language.zh"))
-          .addOption("en", t("language.english"))
-          .setValue(this.plugin.settings.interfaceLanguage)
-          .onChange(async (value) => {
-            this.plugin.settings.interfaceLanguage = this.toInterfaceLanguage(value);
-            await this.plugin.saveSettings();
-            this.display();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.idleThreshold.name"))
-      .setDesc(t("settings.idleThreshold.desc"))
-      .addDropdown((dropdown) => {
-        for (const seconds of IDLE_THRESHOLD_OPTIONS) {
-          dropdown.addOption(String(seconds), `${seconds} ${t("time.seconds")}`);
-        }
-
-        dropdown
-          .setValue(String(this.plugin.settings.idleThresholdSeconds))
-          .onChange(async (value) => {
-            this.plugin.settings.idleThresholdSeconds = Number(value);
-            await this.plugin.saveSettings();
-          });
-      });
-
-    new Setting(containerEl)
-      .setName(t("settings.speedMode.name"))
-      .setDesc(t("settings.speedMode.desc"))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("total", t("speedMode.total"))
-          .addOption("writing", t("speedMode.writing"))
-          .setValue(this.plugin.settings.speedMode)
-          .onChange(async (value) => {
-            this.plugin.settings.speedMode = value === "writing" ? "writing" : "total";
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.speedUnit.name"))
-      .setDesc(t("settings.speedUnit.desc"))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("hour", t("speedUnit.hour"))
-          .addOption("minute", t("speedUnit.minute"))
-          .setValue(this.plugin.settings.speedUnit)
-          .onChange(async (value) => {
-            this.plugin.settings.speedUnit = value === "minute" ? "minute" : "hour";
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.countMode.name"))
-      .setDesc(t("settings.countMode.desc"))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("characters", t("countMode.characters"))
-          .addOption("chinese-characters", t("countMode.chineseCharacters"))
-          .addOption("english-words", t("countMode.englishWords"))
-          .setValue(this.plugin.settings.countMode)
-          .onChange(async (value) => {
-            this.plugin.settings.countMode = this.toCountMode(value);
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.ignoreSeconds.name"))
-      .setDesc(t("settings.ignoreSeconds.desc"))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.ignoreSeconds).onChange(async (value) => {
-          this.plugin.settings.ignoreSeconds = value;
-          await this.plugin.saveSettings();
-        }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.autoOpen.name"))
-      .setDesc(t("settings.autoOpen.desc"))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.autoOpenSidebar).onChange(async (value) => {
-          this.plugin.settings.autoOpenSidebar = value;
-          await this.plugin.saveSettings();
-        }),
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.autoStart.name"))
-      .setDesc(t("settings.autoStart.desc"))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.autoStartOnLaunch).onChange(async (value) => {
-          this.plugin.settings.autoStartOnLaunch = value;
-          await this.plugin.saveSettings();
-        }),
-      );
+    return [
+      {
+        type: "group",
+        heading: t("settings.title"),
+        items: [
+          {
+            name: t("settings.language.name"),
+            desc: t("settings.language.desc"),
+            control: {
+              type: "dropdown",
+              key: "interfaceLanguage",
+              defaultValue: DEFAULT_SETTINGS.interfaceLanguage,
+              options: {
+                system: t("language.system"),
+                zh: t("language.zh"),
+                en: t("language.english"),
+              },
+            },
+          },
+          {
+            name: t("settings.idleThreshold.name"),
+            desc: t("settings.idleThreshold.desc"),
+            control: {
+              type: "dropdown",
+              key: "idleThresholdSeconds",
+              defaultValue: String(DEFAULT_SETTINGS.idleThresholdSeconds),
+              options: idleThresholdOptions,
+            },
+          },
+          {
+            name: t("settings.speedMode.name"),
+            desc: t("settings.speedMode.desc"),
+            control: {
+              type: "dropdown",
+              key: "speedMode",
+              defaultValue: DEFAULT_SETTINGS.speedMode,
+              options: {
+                total: t("speedMode.total"),
+                writing: t("speedMode.writing"),
+              },
+            },
+          },
+          {
+            name: t("settings.speedUnit.name"),
+            desc: t("settings.speedUnit.desc"),
+            control: {
+              type: "dropdown",
+              key: "speedUnit",
+              defaultValue: DEFAULT_SETTINGS.speedUnit,
+              options: {
+                hour: t("speedUnit.hour"),
+                minute: t("speedUnit.minute"),
+              },
+            },
+          },
+          {
+            name: t("settings.countMode.name"),
+            desc: t("settings.countMode.desc"),
+            control: {
+              type: "dropdown",
+              key: "countMode",
+              defaultValue: DEFAULT_SETTINGS.countMode,
+              options: {
+                characters: t("countMode.characters"),
+                "chinese-characters": t("countMode.chineseCharacters"),
+                "english-words": t("countMode.englishWords"),
+              },
+            },
+          },
+          {
+            name: t("settings.ignoreSeconds.name"),
+            desc: t("settings.ignoreSeconds.desc"),
+            control: {
+              type: "toggle",
+              key: "ignoreSeconds",
+              defaultValue: DEFAULT_SETTINGS.ignoreSeconds,
+            },
+          },
+          {
+            name: t("settings.autoOpen.name"),
+            desc: t("settings.autoOpen.desc"),
+            control: {
+              type: "toggle",
+              key: "autoOpenSidebar",
+              defaultValue: DEFAULT_SETTINGS.autoOpenSidebar,
+            },
+          },
+          {
+            name: t("settings.autoStart.name"),
+            desc: t("settings.autoStart.desc"),
+            control: {
+              type: "toggle",
+              key: "autoStartOnLaunch",
+              defaultValue: DEFAULT_SETTINGS.autoStartOnLaunch,
+            },
+          },
+        ],
+      },
+    ];
   }
 
-  private toCountMode(value: string): CountMode {
-    if (value === "chinese-characters" || value === "english-words") {
-      return value;
+  getControlValue(key: keyof WritingStatsSettings): unknown {
+    if (key === "idleThresholdSeconds") {
+      return String(this.plugin.settings.idleThresholdSeconds);
     }
 
-    return "characters";
+    return this.plugin.settings[key];
   }
 
-  private toInterfaceLanguage(value: string): InterfaceLanguage {
-    if (value === "zh" || value === "en") {
-      return value;
+  async setControlValue(key: keyof WritingStatsSettings, value: unknown): Promise<void> {
+    switch (key) {
+      case "interfaceLanguage":
+        this.plugin.settings.interfaceLanguage = this.toInterfaceLanguage(value);
+        break;
+      case "idleThresholdSeconds":
+        this.plugin.settings.idleThresholdSeconds = this.toIdleThreshold(value);
+        break;
+      case "speedMode":
+        this.plugin.settings.speedMode = value === "writing" ? "writing" : "total";
+        break;
+      case "speedUnit":
+        this.plugin.settings.speedUnit = value === "minute" ? "minute" : "hour";
+        break;
+      case "countMode":
+        this.plugin.settings.countMode = this.toCountMode(value);
+        break;
+      case "ignoreSeconds":
+      case "autoOpenSidebar":
+      case "autoStartOnLaunch":
+        this.plugin.settings[key] = value === true;
+        break;
     }
 
-    return "system";
+    await this.plugin.saveSettings();
+
+    if (key === "interfaceLanguage") {
+      this.update();
+    }
+  }
+
+  private toCountMode(value: unknown): CountMode {
+    return value === "chinese-characters" || value === "english-words"
+      ? value
+      : "characters";
+  }
+
+  private toInterfaceLanguage(value: unknown): InterfaceLanguage {
+    return value === "zh" || value === "en" ? value : "system";
+  }
+
+  private toIdleThreshold(value: unknown): number {
+    const seconds = typeof value === "string" ? Number(value) : Number.NaN;
+    return IDLE_THRESHOLD_OPTIONS.some((option) => option === seconds)
+      ? seconds
+      : DEFAULT_SETTINGS.idleThresholdSeconds;
   }
 }

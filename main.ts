@@ -107,10 +107,8 @@ export default class WritingStatsPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = {
-      ...DEFAULT_SETTINGS,
-      ...(await this.loadData()),
-    };
+    const storedData: unknown = await this.loadData();
+    this.settings = this.normalizeSettings(storedData);
   }
 
   async saveSettings(): Promise<void> {
@@ -143,7 +141,7 @@ export default class WritingStatsPlugin extends Plugin {
       return;
     }
 
-    const editorKey = editor as object;
+    const editorKey = editor;
     const currentContent = editor.getValue();
     const previousContent = this.editorContentCache.get(editorKey);
 
@@ -163,7 +161,7 @@ export default class WritingStatsPlugin extends Plugin {
       return;
     }
 
-    this.editorContentCache.set(editor as object, editor.getValue());
+    this.editorContentCache.set(editor, editor.getValue());
   }
 
   private getActiveEditor(): EditorLike | null {
@@ -176,7 +174,7 @@ export default class WritingStatsPlugin extends Plugin {
       typeof value === "object" &&
       value !== null &&
       "getValue" in value &&
-      typeof (value as EditorLike).getValue === "function"
+      typeof value.getValue === "function"
     );
   }
 
@@ -211,7 +209,7 @@ export default class WritingStatsPlugin extends Plugin {
   private async openStatsView(): Promise<void> {
     const existingLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_WRITING_STATS)[0];
     if (existingLeaf) {
-      this.app.workspace.revealLeaf(existingLeaf);
+      await this.app.workspace.revealLeaf(existingLeaf);
       return;
     }
 
@@ -220,6 +218,47 @@ export default class WritingStatsPlugin extends Plugin {
       type: VIEW_TYPE_WRITING_STATS,
       active: true,
     });
-    this.app.workspace.revealLeaf(leaf);
+    await this.app.workspace.revealLeaf(leaf);
+  }
+
+  private normalizeSettings(value: unknown): WritingStatsSettings {
+    if (!this.isRecord(value)) {
+      return { ...DEFAULT_SETTINGS };
+    }
+
+    return {
+      interfaceLanguage:
+        value.interfaceLanguage === "zh" || value.interfaceLanguage === "en"
+          ? value.interfaceLanguage
+          : "system",
+      idleThresholdSeconds:
+        typeof value.idleThresholdSeconds === "number" &&
+        Number.isFinite(value.idleThresholdSeconds) &&
+        value.idleThresholdSeconds > 0
+          ? value.idleThresholdSeconds
+          : DEFAULT_SETTINGS.idleThresholdSeconds,
+      speedMode: value.speedMode === "writing" ? "writing" : "total",
+      speedUnit: value.speedUnit === "minute" ? "minute" : "hour",
+      countMode:
+        value.countMode === "chinese-characters" || value.countMode === "english-words"
+          ? value.countMode
+          : "characters",
+      ignoreSeconds:
+        typeof value.ignoreSeconds === "boolean"
+          ? value.ignoreSeconds
+          : DEFAULT_SETTINGS.ignoreSeconds,
+      autoOpenSidebar:
+        typeof value.autoOpenSidebar === "boolean"
+          ? value.autoOpenSidebar
+          : DEFAULT_SETTINGS.autoOpenSidebar,
+      autoStartOnLaunch:
+        typeof value.autoStartOnLaunch === "boolean"
+          ? value.autoStartOnLaunch
+          : DEFAULT_SETTINGS.autoStartOnLaunch,
+    };
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
   }
 }
