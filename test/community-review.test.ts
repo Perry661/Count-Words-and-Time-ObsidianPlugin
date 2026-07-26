@@ -13,6 +13,17 @@ test("declares the minimum Obsidian version required by the settings API", () =>
   assert.equal(manifest.minAppVersion, "1.13.0");
 });
 
+test("keeps the plugin manifest and package release versions in sync", () => {
+  const manifest = JSON.parse(readProjectFile("manifest.json")) as {
+    version?: unknown;
+  };
+  const packageJson = JSON.parse(readProjectFile("package.json")) as {
+    version?: unknown;
+  };
+
+  assert.equal(manifest.version, packageJson.version);
+});
+
 test("uses declarative settings definitions instead of deprecated display rendering", () => {
   const settingsSource = readProjectFile("settings.ts");
 
