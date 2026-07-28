@@ -1,7 +1,7 @@
 {
   "id": "count-words-and-time",
   "name": "Count Words and Time",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.13.0",
   "description": "Track writing session count, writing time, idle time, average speed, and focus rate.",
   "author": "dongperry",
