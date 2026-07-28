@@ -132,3 +132,7 @@ styles.css
 ```
 
 The source repository should include the TypeScript source files, configuration files, tests, `package.json`, and `package-lock.json`. Do not commit `node_modules/`.
+
+## Sample
+<img width="1470" height="1706" alt="Snipaste_2026-07-27_17-17-54" src="https://github.com/user-attachments/assets/9364d50c-c5b9-4cfa-b796-f8614ee03afe" />
+
